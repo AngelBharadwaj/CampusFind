@@ -1,6 +1,6 @@
 # CampusFind
 
-CampusFind is a role-based Lost & Found portal for colleges.
+CampusFind is a role-based Lost & Found portal for my college campus.
 
 ## Features
 - Student & Faculty dashboards
