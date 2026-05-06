@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CampusFind - Faculty Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet" />
+  <style>
+    body {
+      background: url('gsss.jpg') no-repeat center center fixed;
+      background-size: cover;
+      font-family: "Segoe UI", sans-serif;
+    }
+    .dashboard-container {
+      margin: 3% auto;
+      max-width: 1250px;
+      background: rgba(255,255,255,0.96);
+      padding: 26px;
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+      position: relative;
+    }
+    .dashboard-title { 
+      font-size: 26px; 
+      font-weight: 700; 
+      color: #0d6efd; 
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logout-btn { 
+      position: absolute; 
+      top: 20px; 
+      right: 40px; 
+    }
+    /* Fixed blue tab headers with better text visibility */
+    th { 
+      background: linear-gradient(135deg, #0d6efd, #0a58ca); 
+      color: #ffffff !important;
+      text-align: center; 
+      font-weight: 700;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+      border: 1px solid #0a58ca;
+      padding: 12px 8px;
+    }
+    td { 
+      text-align: center; 
+      vertical-align: middle; 
+    }
+    img.item-thumb { 
+      width: 50px; 
+      height: 50px; 
+      border-radius: 6px; 
+      cursor: pointer; 
+      object-fit: cover; 
+      border: 2px solid #dee2e6;
+    }
+    /* Improved tab button styling */
+    .tab-btn { 
+      border: 2px solid #0d6efd;
+      color: #0d6efd;
+      font-weight: 600;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+    .tab-btn.active { 
+      background: linear-gradient(135deg, #0d6efd, #0a58ca) !important; 
+      color: #ffffff !important; 
+      border-color: #0a58ca;
+      text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+    }
+    .tab-btn:hover:not(.active) {
+      background-color: #e7f1ff;
+      color: #0a58ca;
+    }
+    .pagination-controls { 
+      display:flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin-top: 10px; 
+    }
+    .search-box {
+      border-radius: 25px;
+      padding: 12px 20px;
+      border: 2px solid #e9ecef;
+    }
+    .search-box:focus {
+      border-color: #0d6efd;
+      box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
+    }
+    /* Color coding for verified and rejected rows */
+    .verified-row {
+      background-color: #d4edda !important;
+      border-left: 4px solid #28a745;
+    }
+    .rejected-row {
+      background-color: #f8d7da !important;
+      border-left: 4px solid #dc3545;
+    }
+    .pending-receipt {
+      background-color: #fff3cd !important;
+      border-left: 4px solid #ffc107;
+    }
+    .claim-group {
+      background-color: #f8f9fa;
+      border-left: 4px solid #0d6efd;
+      font-weight: bold;
+    }
+    .verification-badge {
+      font-size: 0.75rem;
+      padding: 3px 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+    <div class="dashboard-title">
+      <i class="bi bi-speedometer2"></i>
+      Faculty Dashboard
+    </div>
+    <button class="btn btn-sm btn-danger logout-btn" onclick="logout()">
+      <i class="bi bi-box-arrow-right me-1"></i> Logout
+    </button>
+
+    <div class="mb-3">
+      <button class="btn btn-outline-primary tab-btn active" onclick="showTab('pending')">
+        <i class="bi bi-clock me-2"></i>Pending Claims
+      </button>
+      <button class="btn btn-outline-primary tab-btn" onclick="showTab('receipt')">
+        <i class="bi bi-box-arrow-in-down me-2"></i>Confirm Receipt
+      </button>
+      <button class="btn btn-outline-primary tab-btn" onclick="showTab('lost')">
+        <i class="bi bi-bag me-2"></i>Available Items
+      </button>
+      <button class="btn btn-outline-primary tab-btn" onclick="showTab('history')">
+        <i class="bi bi-clock-history me-2"></i>History
+      </button>
+    </div>
+
+    <div class="mb-3">
+      <input type="text" id="searchInput" class="form-control search-box" placeholder="🔍 Search by item name..." oninput="filterData()">
+    </div>
+
+    <div id="tableContainer"></div>
+
+    <div class="pagination-controls">
+      <button class="btn btn-outline-secondary btn-sm" id="prevBtn" onclick="changePage(-1)">
+        <i class="bi bi-chevron-left"></i> Previous
+      </button>
+      <span id="pageInfo" class="fw-bold text-primary"></span>
+      <button class="btn btn-outline-secondary btn-sm" id="nextBtn" onclick="changePage(1)">
+        Next <i class="bi bi-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Image Modal -->
+  <div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="padding:12px; background:transparent; border:none;">
+        <img id="modalImage" src="" alt="item image" style="width:80vmin; height:80vmin; object-fit:contain; border-radius:8px; background:#fff; padding:8px;">
+      </div>
+    </div>
+  </div>
+
+  <!-- Receipt Confirmation Modal -->
+  <div class="modal fade" id="receiptModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Confirm Item Receipt</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Please confirm that the student has physically handed over this item to you:</p>
+          <div id="receiptDetails" class="p-3 bg-light rounded">
+            <!-- Details will be populated by JavaScript -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-success" onclick="confirmReceipt()">Confirm Receipt</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const API = "http://localhost:5000";
+    let currentTab = "pending", allData = [], filteredData = [], currentPage = 1, itemsPerPage = 10;
+    let currentReceiptItem = null;
+
+    function checkAuth() {
+    return true;
+}
+
+    async function fetchData(tab) {
+      const container = document.getElementById("tableContainer");
+      container.innerHTML = `
+        <div class="text-center p-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="text-muted mt-2">Loading ${tab} data...</p>
+        </div>
+      `;
+      document.getElementById("searchInput").value = "";
+      
+      try {
+        let res;
+        if(tab === 'pending') res = await fetch(`${API}/api/claims/pending`);
+        else if(tab === 'receipt') res = await fetch(`${API}/api/items/pending-receipt`);
+        else if(tab === 'lost') res = await fetch(`${API}/api/items/available`);
+        else if(tab === 'history') res = await fetch(`${API}/api/history`);
+        
+        if(!res.ok) throw new Error(`API Error: ${res.status} ${res.statusText}`);
+        
+        const data = await res.json();
+        console.log(`Data for ${tab}:`, data);
+        
+        allData = filteredData = data;
+        currentPage = 1; 
+        renderTable();
+      } catch(err){ 
+        console.error('Fetch error:', err); 
+        container.innerHTML = `
+          <div class="alert alert-danger text-center">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Failed to load data: ${err.message}
+          </div>
+        `;
+      }
+    }
+
+    function filterData(){
+      const term = document.getElementById("searchInput").value.toLowerCase();
+      filteredData = allData.filter(item => (item.itemName||"").toLowerCase().includes(term));
+      currentPage = 1; 
+      renderTable();
+    }
+
+    function changePage(dir){
+      const total = Math.ceil(filteredData.length / itemsPerPage);
+      currentPage += dir; 
+      if(currentPage < 1) currentPage = 1; 
+      if(currentPage > total) currentPage = total; 
+      renderTable();
+    }
+
+    function renderTable(){
+      const container = document.getElementById("tableContainer");
+      const start = (currentPage - 1) * itemsPerPage;
+      const pageData = filteredData.slice(start, start + itemsPerPage);
+      
+      if(!pageData.length){ 
+        container.innerHTML = `
+          <div class="text-center text-muted p-5">
+            <i class="bi bi-inbox display-1"></i>
+            <p class="fs-5 mt-3">No records found</p>
+          </div>
+        `; 
+        document.getElementById("pageInfo").textContent = ""; 
+        return;
+      }
+      
+      let headers = "", rows = "";
+      
+      if(currentTab === "pending"){
+        headers = `<tr><th>#</th><th>Item Name</th><th>Claimed By</th><th>Phone</th><th>Specifications</th><th>Actions</th></tr>`;
+        
+        // Group claims by item name
+        const groupedClaims = {};
+        pageData.forEach(claim => {
+          if (!groupedClaims[claim.itemName]) {
+            groupedClaims[claim.itemName] = [];
+          }
+          groupedClaims[claim.itemName].push(claim);
+        });
+
+        Object.keys(groupedClaims).forEach(itemName => {
+          const claims = groupedClaims[itemName];
+          // Add group header
+          rows += `
+            <tr class="claim-group">
+              <td colspan="6" class="text-start px-3">
+                <i class="bi bi-collection me-2"></i>${itemName} - ${claims.length} claim(s)
+              </td>
+            </tr>
+          `;
+          
+          // Add each claim in the group
+          claims.forEach((claim, index) => {
+            rows += `
+              <tr id="claim-${claim._id}">
+                <td class="fw-semibold">${start + index + 1}</td>
+                <td class="fw-semibold text-primary">${claim.itemName}</td>
+                <td><span class="badge bg-info">${claim.usn || 'N/A'}</span></td>
+                <td>${claim.phone || 'N/A'}</td>
+                <td><small>${claim.specifications || 'No specifications'}</small></td>
+                <td>
+                  <button class="btn btn-success btn-sm me-1" onclick="returnToOwner('${claim._id}', '${claim.itemName}', '${claim.usn}')">
+                    <i class="bi bi-person-check me-1"></i>Return to Owner
+                  </button>
+                  <button class="btn btn-danger btn-sm" onclick="rejectClaim('${claim._id}', '${claim.itemName}', '${claim.usn}')">
+                    <i class="bi bi-x-lg me-1"></i>Reject Claim
+                  </button>
+                </td>
+              </tr>
+            `;
+          });
+        });
+      }
+      else if(currentTab === "receipt"){
+        headers = `<tr><th>#</th><th>USN</th><th>Phone</th><th>Item Name</th><th>Submitted Location</th><th>Date Reported</th><th>Image</th><th>Actions</th></tr>`;
+        rows = pageData.map((item, i) => `
+          <tr class="pending-receipt">
+            <td class="fw-semibold">${start + i + 1}</td>
+            <td><span class="badge bg-secondary">${item.usn || 'N/A'}</span></td>
+            <td>${item.phone || 'N/A'}</td>
+            <td class="fw-semibold text-primary">${item.itemName || 'N/A'}</td>
+            <td><i class="bi bi-geo-alt me-1"></i>${item.submittedLocation || 'Not specified'}</td>
+            <td><small>${new Date(item.createdAt).toLocaleString()}</small></td>
+            <td>
+              ${item.imageUrl ? 
+                `<img src="${API}${item.imageUrl}" class="item-thumb" onclick="showImage('${API}${item.imageUrl}')" onerror="this.style.display='none'">` : 
+                '<span class="text-muted">No Image</span>'
+              }
+            </td>
+            <td>
+              <button class="btn btn-primary btn-sm" onclick="confirmItemReceipt('${item._id}')">
+                <i class="bi bi-check-circle me-1"></i>Confirm Receipt
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      }
+      else if(currentTab === "lost"){
+        headers = `<tr><th>#</th><th>USN</th><th>Phone</th><th>Item Name</th><th>Location</th><th>Status</th><th>Image</th></tr>`;
+        rows = pageData.map((item, i) => `
+          <tr>
+            <td class="fw-semibold">${start + i + 1}</td>
+            <td><span class="badge bg-secondary">${item.usn || 'N/A'}</span></td>
+            <td>${item.phone || 'N/A'}</td>
+            <td class="fw-semibold text-primary">${item.itemName || 'N/A'}</td>
+            <td><i class="bi bi-geo-alt me-1"></i>${item.submittedLocation || 'Not specified'}</td>
+            <td>
+              <span class="badge bg-success verification-badge">
+                <i class="bi bi-check-circle me-1"></i>Available for Claim
+              </span>
+            </td>
+            <td>
+              ${item.imageUrl ? 
+                `<img src="${API}${item.imageUrl}" class="item-thumb" onclick="showImage('${API}${item.imageUrl}')" onerror="this.style.display='none'">` : 
+                '<span class="text-muted">No Image</span>'
+              }
+            </td>
+          </tr>
+        `).join('');
+      }
+      else if(currentTab === "history"){
+        headers = `<tr><th>#</th><th>USN</th><th>Phone</th><th>Item Name</th><th>Specifications</th><th>Status</th><th>Date</th></tr>`;
+        rows = pageData.map((h, i) => `
+          <tr class="${h.status === 'returned_to_owner' ? 'verified-row' : 'rejected-row'}">
+            <td class="fw-semibold">${start + i + 1}</td>
+            <td><span class="badge ${h.status === 'returned_to_owner' ? 'bg-success' : 'bg-danger'}">${h.usn || 'N/A'}</span></td>
+            <td>${h.phone || 'N/A'}</td>
+            <td class="fw-semibold">${h.itemName || 'N/A'}</td>
+            <td><small>${h.specifications || 'No specifications'}</small></td>
+            <td>
+              <span class="badge ${h.status === 'returned_to_owner' ? 'bg-success' : 'bg-danger'}">
+                ${h.status === 'returned_to_owner' ? 'Returned to Owner' : 'Claim Rejected'}
+              </span>
+            </td>
+            <td><i class="bi bi-calendar me-1"></i>${h.verifiedAt ? new Date(h.verifiedAt).toLocaleString() : 'N/A'}</td>
+          </tr>
+        `).join('');
+      }
+      
+      container.innerHTML = `
+        <div class="table-responsive">
+          <table class="table table-bordered table-hover align-middle">
+            <thead>${headers}</thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      `;
+      
+      const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+      document.getElementById("pageInfo").textContent = `Page ${currentPage} of ${totalPages}`;
+    }
+
+    // Function to confirm item receipt from student
+    function confirmItemReceipt(itemId) {
+      const item = allData.find(i => i._id === itemId);
+      if (!item) {
+        alert("Item not found!");
+        return;
+      }
+      
+      currentReceiptItem = item;
+      
+      // Populate receipt details
+      document.getElementById('receiptDetails').innerHTML = `
+        <p><strong>Item:</strong> ${item.itemName}</p>
+        <p><strong>Submitted by:</strong> ${item.usn}</p>
+        <p><strong>Phone:</strong> ${item.phone}</p>
+        <p><strong>Location:</strong> ${item.submittedLocation}</p>
+        <p><strong>Date Reported:</strong> ${new Date(item.createdAt).toLocaleString()}</p>
+      `;
+      
+      // Show the receipt confirmation modal
+      new bootstrap.Modal(document.getElementById('receiptModal')).show();
+    }
+
+    async function confirmReceipt() {
+      try {
+        const res = await fetch(`${API}/api/confirm-receipt`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            itemId: currentReceiptItem._id
+          })
+        });
+        
+        if (!res.ok) {
+          throw new Error("Receipt confirmation failed");
+        }
+        
+        // Close the modal
+        bootstrap.Modal.getInstance(document.getElementById('receiptModal')).hide();
+        
+        // Show success message
+        const successAlert = document.createElement('div');
+        successAlert.className = 'alert alert-success alert-dismissible fade show';
+        successAlert.innerHTML = `
+          <i class="bi bi-check-circle me-2"></i>
+          <strong>Success!</strong> Item receipt confirmed. Item is now available for claiming.
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.querySelector('.dashboard-container').insertBefore(successAlert, document.querySelector('.mb-3'));
+        
+        // Refresh data
+        await fetchData("receipt");
+        await fetchData("lost");
+        
+      } catch(err) { 
+        console.error('Receipt confirmation error:', err); 
+        alert("❌ Error confirming receipt: " + err.message);
+      }
+    }
+
+    // Updated function for returning item to owner
+    async function returnToOwner(id, itemName, usn) {
+      if(!confirm(`Return "${itemName}" to ${usn}?`)) return;
+      
+      try {
+        const res = await fetch(`${API}/api/return-to-owner`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            claimId: id,
+            itemName: itemName,
+            status: 'returned_to_owner'
+          })
+        });
+        
+        if (!res.ok) throw new Error("Return to owner failed");
+        
+        // Show success message
+        const successAlert = document.createElement('div');
+        successAlert.className = 'alert alert-success alert-dismissible fade show';
+        successAlert.innerHTML = `
+          <i class="bi bi-check-circle me-2"></i>
+          <strong>Success!</strong> Item returned to owner and moved to history.
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.querySelector('.dashboard-container').insertBefore(successAlert, document.querySelector('.mb-3'));
+        
+        // Refresh data
+        await fetchData("pending");
+        await fetchData("history");
+        
+      } catch(err) { 
+        console.error('Return to owner error:', err); 
+        alert("❌ Error returning item to owner: " + err.message);
+      }
+    }
+
+    async function rejectClaim(id, itemName, usn) {
+      if(!confirm(`Reject claim for "${itemName}" by ${usn}?`)) return;
+      
+      try {
+        const res = await fetch(`${API}/api/reject-claim`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            claimId: id,
+            itemName: itemName,
+            status: 'rejected'
+          })
+        });
+        
+        if (!res.ok) throw new Error("Rejection failed");
+        
+        // Show success message
+        const successAlert = document.createElement('div');
+        successAlert.className = 'alert alert-warning alert-dismissible fade show';
+        successAlert.innerHTML = `
+          <i class="bi bi-info-circle me-2"></i>
+          <strong>Claim Rejected!</strong> Claim moved to rejected history.
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.querySelector('.dashboard-container').insertBefore(successAlert, document.querySelector('.mb-3'));
+        
+        // Refresh data
+        await fetchData("pending");
+        await fetchData("history");
+        
+      } catch(err) { 
+        console.error('Reject claim error:', err); 
+        alert("❌ Error rejecting claim: " + err.message);
+      }
+    }
+
+    function showImage(src){
+      document.getElementById("modalImage").src = src;
+      new bootstrap.Modal(document.getElementById("imageModal")).show();
+    }
+
+    function showTab(tab){
+      currentTab = tab;
+      document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+      const tabIndex = ["pending","receipt","lost","history"].indexOf(tab);
+      document.querySelectorAll(".tab-btn")[tabIndex].classList.add("active");
+      fetchData(tab);
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      localStorage.removeItem('userEmail');
+      window.location.href = 'login.html';
+    }
+
+    // Initialize when page loads
+    window.addEventListener("DOMContentLoaded", () => {
+      if (checkAuth()) {
+        fetchData("pending");
+      }
+    });
+  </script>
+</body>
+</html>

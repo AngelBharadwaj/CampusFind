@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Report Found Item - CampusFind</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      background: url('gsss.jpg') no-repeat center center fixed;
+      background-size: cover;
+      font-family: "Segoe UI", sans-serif;
+    }
+    .card {
+      background: rgba(255,255,255,0.95);
+      margin: 50px auto;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+      max-width: 500px;
+      transition: 0.3s;
+      border: none;
+    }
+    button.back-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+    }
+    .form-label {
+      font-weight: 600;
+      color: #495057;
+      margin-bottom: 8px;
+    }
+    .form-control, .form-select {
+      border-radius: 8px;
+      padding: 12px 15px;
+      border: 2px solid #e9ecef;
+      transition: all 0.3s;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: #0d6efd;
+      box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
+    }
+    .btn-primary {
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+    /* USN validation styling */
+    .usn-valid { border-color: #198754 !important; }
+    .usn-invalid { border-color: #dc3545 !important; }
+    .validation-feedback { font-size: 0.875rem; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <!-- Back button redirects to student dashboard -->
+  <button class="btn btn-secondary back-btn" onclick="window.location.href='student.html'">
+    <i class="bi bi-arrow-left me-1"></i> Back
+  </button>
+
+  <div class="card">
+    <div class="text-center mb-4">
+      <h3 class="text-primary mt-2">Report Found Item</h3>
+      <p class="text-muted">Help reunite lost items with their owners</p>
+    </div>
+    
+    <form id="reportForm">
+      <div class="mb-3">
+        <label class="form-label">USN</label>
+        <input type="text" id="usn" class="form-control" 
+               placeholder="Enter USN" 
+               required>
+        <div id="usnFeedback" class="validation-feedback"></div>
+      </div>
+      
+      <div class="mb-3">
+        <label class="form-label">Phone Number</label>
+        <input type="tel" id="phone" class="form-control" 
+               placeholder="Enter 10-digit phone number"
+               pattern="[0-9]{10}"
+               title="Phone number must be exactly 10 digits"
+               required>
+      </div>
+      
+      <div class="mb-3">
+        <label class="form-label">Item Name</label>
+        <input type="text" id="itemName" class="form-control" 
+               placeholder="Enter item name (e.g., Water Bottle, Books, etc.)"
+               required>
+      </div>
+      
+      <div class="mb-3">
+        <label class="form-label">Upload Image</label>
+        <input type="file" id="imageInput" class="form-control" 
+               accept="image/*" capture="environment" 
+               required>
+        <div class="form-text">Upload a clear image of the found item</div>
+      </div>
+      
+      <div class="mb-4">
+        <label class="form-label">Submitted Location</label>
+        <select id="submittedLocation" class="form-select" required>
+          <option value="" selected disabled>Select a location...</option>
+          <option value="RECEPTION">RECEPTION</option>
+          <option value="MATHS Dept. - 'B' Block Ground floor">MATHS Dept. - 'B' Block Ground floor</option>
+          <option value="CHEMISTRY Dept. - 'A' Block Ground floor">CHEMISTRY Dept. - 'A' Block Ground floor</option>
+          <option value="PHYSICS Dept. - 'A' Block 1st floor">PHYSICS Dept. - 'A' Block 1st floor</option>
+          <option value="CSE Dept. - 'A' Block 1st floor">CSE Dept. - 'A' Block 1st floor</option>
+          <option value="ISE Dept. - 'A' Block 2nd floor">ISE Dept. - 'A' Block 2nd floor</option>
+          <option value="ECE Dept. - 'A' Block 3rd floor">ECE Dept. - 'A' Block 3rd floor</option>
+          <option value="EEE Dept. - 'A' Block 3rd floor">EEE Dept. - 'A' Block 3rd floor</option>
+          <option value="AIML Dept. - 'D' Block 2nd floor">AIML Dept. - 'D' Block 2nd floor</option>
+          <option value="AIDS Dept. - 'D' Block 3rd floor">AIDS Dept. - 'D' Block 3rd floor</option>
+          <option value="LIBRARY - 'A' Block Ground floor">LIBRARY - 'A' Block Ground floor</option>
+          <option value="MBA - 'D' Block 1st floor">MBA - 'D' Block 1st floor</option>
+        </select>
+        <div class="form-text">Select the location where you submitted the item</div>
+      </div>
+      
+      <button type="submit" class="btn btn-primary w-100 py-2">
+        <i class="bi bi-upload me-2"></i> Submit Report
+      </button>
+    </form>
+  </div>
+
+  <script>
+    const API_BASE_URL = "http://localhost:5000";
+
+    // Initialize everything when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('🚀 DOM loaded, initializing...');
+
+      // Initialize form submission
+      initializeFormSubmission();
+      
+      // Initialize USN validation
+      initializeUSNValidation();
+    });
+
+    // Enhanced USN validation function
+    function validateUSN(usn) {
+      // USN format: 4GW + 2 digits + 2 letters + 3 digits 
+      const usnRegex = /^4GW\d{2}[A-Za-z]{2}\d{3}$/;
+      return usnRegex.test(usn);
+    }
+
+    function initializeUSNValidation() {
+      const usnInput = document.getElementById('usn');
+      if (usnInput) {
+        usnInput.addEventListener('input', function(e) {
+          const usn = e.target.value.trim().toUpperCase();
+          const feedback = document.getElementById('usnFeedback');
+          
+          if (usn === '') {
+            e.target.classList.remove('usn-valid', 'usn-invalid');
+            feedback.textContent = '';
+            return;
+          }
+          
+          if (validateUSN(usn)) {
+            e.target.classList.add('usn-valid');
+            e.target.classList.remove('usn-invalid');
+            feedback.textContent = '✓ Valid USN';
+            feedback.style.color = '#198754';
+          } else {
+            e.target.classList.add('usn-invalid');
+            e.target.classList.remove('usn-valid');
+            feedback.textContent = '✗ Format: 4GW + 2 digits + 2 letters + 3 digits';
+            feedback.style.color = '#dc3545';
+          }
+        });
+      }
+    }
+
+    function initializeFormSubmission() {
+      const reportForm = document.getElementById("reportForm");
+      if (!reportForm) {
+        console.error('❌ Report form not found');
+        return;
+      }
+
+      reportForm.addEventListener("submit", async (e) => {
+        // CRITICAL: Prevent default form submission
+        e.preventDefault();
+        console.log('📝 Form submission started...');
+        
+        const usn = document.getElementById("usn").value.trim().toUpperCase();
+        const phone = document.getElementById("phone").value.trim();
+        const itemName = document.getElementById("itemName").value.trim();
+        const submittedLocation = document.getElementById("submittedLocation").value;
+        const file = document.getElementById("imageInput").files[0];
+        
+        // Validate USN format
+        if (!validateUSN(usn)) {
+          alert("❌ Invalid USN format. Must be in format: 4GW23AD030 (4GW + 2 digits + 2 letters + 3 digits)");
+          document.getElementById('usn').focus();
+          return;
+        }
+        
+        // Validate phone number
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phoneRegex.test(phone)) {
+          alert("❌ Invalid phone number. Must be exactly 10 digits.");
+          return;
+        }
+        
+        if (!file) {
+          alert("📸 Please upload an image of the found item!");
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('usn', usn);
+        formData.append('phone', phone);
+        formData.append('itemName', itemName);
+        formData.append('submittedLocation', submittedLocation);
+        formData.append('image', file);
+
+        try {
+          const submitBtn = document.querySelector('button[type="submit"]');
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<i class="bi bi-arrow-repeat spinner-border spinner-border-sm me-2"></i>Submitting...';
+
+          console.log('📤 Sending request to server...');
+          const res = await fetch(`${API_BASE_URL}/api/items`, {
+            method: "POST",
+            body: formData
+          });
+          
+          const data = await res.json();
+          console.log('📥 Server response:', data);
+          
+          if (res.ok) {
+            // Store the newly reported item in localStorage for immediate display
+            const newItem = {
+              _id: data._id || Date.now().toString(),
+              usn: usn,
+              phone: phone,
+              itemName: itemName,
+              submittedLocation: submittedLocation,
+              imageUrl: data.imageUrl || '/uploads/' + file.name,
+              createdAt: new Date().toISOString()
+            };
+            
+            // Store in localStorage to show immediately on student dashboard
+            localStorage.setItem('newlyReportedItem', JSON.stringify(newItem));
+            localStorage.setItem('refreshStudentDashboard', 'true');
+            
+            // Show the exact alert format you specified
+            alert(`✅ Report submitted successfully!\n\n📍 Submit your item at: ${submittedLocation}\nPlease go to the mentioned location and submit the object for successful report processing.`);
+            
+            // REDIRECT TO STUDENT DASHBOARD AFTER ALERT IS CLOSED
+            window.location.href = "student.html";
+            
+          } else {
+            alert("⚠️ " + (data.message || "Upload failed. Please try again."));
+          }
+        } catch(err) {
+          console.error('❌ Fetch error:', err);
+          alert("❌ Cannot connect to server. Please try again.");
+        } finally {
+          const submitBtn = document.querySelector('button[type="submit"]');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="bi bi-upload me-2"></i> Submit Report';
+        }
+      });
+    }
+  </script>
+</body>
+</html>

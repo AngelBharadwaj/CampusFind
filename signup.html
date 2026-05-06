@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CampusFind - Signup</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: url('gsss.jpg') no-repeat center center fixed;
+      background-size: cover;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+    }
+
+    .signup-container {
+      max-width: 400px;
+      margin: 2% auto;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .logo {
+      font-size: 28px;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 20px;
+      color: #0d6efd;
+    }
+
+    .input-group-text {
+      cursor: pointer;
+    }
+
+    .message {
+      text-align: center;
+      margin-top: 15px;
+      font-weight: 600;
+      min-height: 20px;
+    }
+
+    .hint {
+      font-size: 0.8rem;
+      color: #6c757d;
+    }
+
+    .otp-section {
+      display: none;
+    }
+
+    .countdown {
+      font-size: 0.8rem;
+      color: #dc3545;
+      margin-top: 5px;
+    }
+
+    .email-error {
+      font-size: 0.8rem;
+      color: #dc3545;
+      margin-top: 5px;
+    }
+
+    .form-control:focus {
+      border-color: #0d6efd;
+      box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #0d6efd, #0a58ca);
+      border: none;
+      padding: 10px;
+    }
+    
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #0a58ca, #084298);
+    }
+    
+    .success-message {
+      color: #198754;
+      font-weight: bold;
+    }
+    
+    .error-message {
+      color: #dc3545;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="signup-container">
+      <div class="logo">CampusFind</div>
+      <form id="signupForm">
+        <!-- Email -->
+        <div class="mb-3">
+          <label class="form-label">Email</label>
+          <input type="email" id="email" class="form-control" placeholder="Enter your email" required>
+          <div class="email-error" id="emailError"></div>
+        </div>
+
+        <!-- Password -->
+        <div class="mb-3">
+          <label class="form-label">Password</label>
+          <div class="input-group">
+            <input type="password" id="password" class="form-control" placeholder="At least 8 characters" required>
+            <span class="input-group-text" id="togglePassword">
+              <i class="bi bi-eye-fill"></i>
+            </span>
+          </div>
+          <small class="hint">Password must be at least 8 characters long, contain one uppercase letter and one special character.</small>
+        </div>
+
+        <!-- Role -->
+        <div class="mb-3">
+          <label class="form-label">Role</label>
+          <select id="role" class="form-select" required>
+            <option value="" disabled selected>Select Role</option>
+            <option value="student">Student</option>
+            <option value="faculty">Faculty</option>
+          </select>
+        </div>
+
+        <!-- OTP Section (only for students) -->
+        <div class="mb-3 otp-section" id="otpSection">
+          <label class="form-label">OTP Verification</label>
+          <div class="input-group mb-2">
+            <input type="text" id="otp" class="form-control" placeholder="Enter 4-digit OTP" maxlength="4">
+            <button type="button" class="btn btn-outline-primary" id="sendOtpBtn">Send OTP</button>
+          </div>
+          <div class="countdown" id="countdown"></div>
+          <small class="hint">OTP will be sent to your email. Valid for 10 minutes.</small>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="btn btn-primary w-100" id="submitBtn">Sign Up</button>
+        <div class="message" id="message"></div>
+
+        <!-- Link to Login -->
+        <p class="text-center mt-3 mb-0">Already have an account?
+          <a href="login.html">Login here</a>
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const togglePassword = document.getElementById("togglePassword");
+    const passwordInput = document.getElementById("password");
+    const messageDiv = document.getElementById("message");
+    const form = document.getElementById("signupForm");
+    const roleSelect = document.getElementById("role");
+    const otpSection = document.getElementById("otpSection");
+    const otpInput = document.getElementById("otp");
+    const sendOtpBtn = document.getElementById("sendOtpBtn");
+    const countdownDiv = document.getElementById("countdown");
+    const submitBtn = document.getElementById("submitBtn");
+    const emailInput = document.getElementById("email");
+    const emailError = document.getElementById("emailError");
+
+    let countdownTimer;
+    let isOtpVerified = false;
+    let currentOtp = '';
+
+    // Password toggle visibility
+    togglePassword?.addEventListener("click", function () {
+      const type = passwordInput.type === "password" ? "text" : "password";
+      passwordInput.type = type;
+      this.innerHTML = type === "password"
+        ? '<i class="bi bi-eye-fill"></i>'
+        : '<i class="bi bi-eye-slash-fill"></i>';
+    });
+
+    // Show/hide OTP section based on role
+    roleSelect?.addEventListener("change", function() {
+      if (this.value === "student") {
+        otpSection.style.display = "block";
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Verify OTP to Sign Up";
+        isOtpVerified = false;
+      } else {
+        otpSection.style.display = "none";
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Sign Up";
+        isOtpVerified = true;
+      }
+    });
+
+    // Email validation function
+    function isValidEmail(email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(email);
+    }
+
+    // Real-time email validation
+    emailInput?.addEventListener("blur", function() {
+      const email = this.value.trim();
+      if (email && !isValidEmail(email)) {
+        emailError.textContent = "Invalid email format";
+      } else {
+        emailError.textContent = "";
+      }
+    });
+
+    // Send OTP
+    sendOtpBtn?.addEventListener("click", async function() {
+      const email = document.getElementById('email').value.trim();
+      const role = document.getElementById('role').value;
+
+      if (!email) {
+        showMessage('Please enter your email first.', 'error-message');
+        return;
+      }
+
+      if (!isValidEmail(email)) {
+        showMessage('Invalid email format. Please enter a valid email.', 'error-message');
+        return;
+      }
+
+      if (role !== 'student') {
+        showMessage('OTP is only required for student registration.', 'error-message');
+        return;
+      }
+
+      try {
+        sendOtpBtn.disabled = true;
+        sendOtpBtn.textContent = 'Sending...';
+
+        const res = await fetch('http://localhost:5000/api/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, role })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          showMessage(data.message, 'success-message');
+          startCountdown(600); // 10 minutes
+          // Store OTP if provided in response (for testing)
+          if (data.otp) {
+            currentOtp = data.otp;
+            console.log('Test OTP:', currentOtp);
+          }
+        } else {
+          showMessage(data.message || 'Failed to send OTP', 'error-message');
+        }
+      } catch (err) {
+        showMessage('Server error. Please try again.', 'error-message');
+      } finally {
+        sendOtpBtn.disabled = false;
+        sendOtpBtn.textContent = 'Send OTP';
+      }
+    });
+
+    // OTP input validation
+    otpInput?.addEventListener("input", function() {
+      this.value = this.value.replace(/[^0-9]/g, '');
+      if (this.value.length === 4) {
+        verifyOTP();
+      }
+    });
+
+    // Countdown timer
+    function startCountdown(seconds) {
+      clearInterval(countdownTimer);
+      let remaining = seconds;
+      
+      countdownTimer = setInterval(() => {
+        const minutes = Math.floor(remaining / 60);
+        const secs = remaining % 60;
+        countdownDiv.textContent = `OTP expires in: ${minutes}:${secs < 10 ? '0' : ''}${secs}`;
+        
+        if (remaining <= 0) {
+          clearInterval(countdownTimer);
+          countdownDiv.textContent = 'OTP has expired';
+          submitBtn.disabled = true;
+          submitBtn.textContent = "OTP Expired - Resend OTP";
+          isOtpVerified = false;
+        } else {
+          remaining--;
+        }
+      }, 1000);
+    }
+
+    // Verify OTP
+    async function verifyOTP() {
+      const email = document.getElementById('email').value.trim();
+      const otp = otpInput.value;
+
+      if (otp.length !== 4) {
+        return;
+      }
+
+      try {
+        const res = await fetch('http://localhost:5000/api/verify-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, otp })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          showMessage('OTP verified successfully!', 'success-message');
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Sign Up";
+          isOtpVerified = true;
+          currentOtp = otp; // Store the verified OTP
+          clearInterval(countdownTimer);
+          countdownDiv.textContent = 'OTP verified';
+        } else {
+          showMessage(data.message || 'Invalid OTP', 'error-message');
+          submitBtn.disabled = true;
+          submitBtn.textContent = "Verify OTP to Sign Up";
+          isOtpVerified = false;
+        }
+      } catch (err) {
+        showMessage('Server error. Please try again.', 'error-message');
+      }
+    }
+
+    // Password validation function
+    function validatePassword(password) {
+      const regex = /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
+      return regex.test(password);
+    }
+
+    // Show message function
+    function showMessage(text, className) {
+      messageDiv.textContent = text;
+      messageDiv.className = 'message ' + className;
+    }
+
+    // Registration function
+    async function handleRegistration() {
+      const email = document.getElementById('email').value.trim();
+      const password = passwordInput.value.trim();
+      const role = document.getElementById('role').value;
+      const otp = currentOtp;
+
+      if (!isValidEmail(email)) {
+        showMessage('Please enter a valid email address.', 'error-message');
+        return;
+      }
+
+      if (!validatePassword(password)) {
+        showMessage('Password must be at least 8 chars long, with one uppercase and one special character.', 'error-message');
+        return;
+      }
+
+      if (!role) {
+        showMessage('Please select a role.', 'error-message');
+        return;
+      }
+
+      // For student, OTP must be verified
+      if (role === 'student' && !isOtpVerified) {
+        showMessage('Please verify OTP first.', 'error-message');
+        return;
+      }
+
+      try {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Signing Up...';
+
+        // Prepare registration data
+        const registrationData = { 
+          email, 
+          password, 
+          role
+        };
+
+        // Add OTP for student registration
+        if (role === 'student') {
+          registrationData.otp = otp;
+        }
+
+        const res = await fetch('http://localhost:5000/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(registrationData)
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          showMessage('✅ ' + data.message, 'success-message');
+          
+          // REDIRECT TO LOGIN PAGE INSTEAD OF DASHBOARD
+          setTimeout(() => {
+            window.location.href = "login.html";
+          }, 1500);
+
+        } else {
+          showMessage('❌ ' + (data.message || 'Registration failed'), 'error-message');
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Sign Up";
+        }
+      } catch (err) {
+        showMessage('❌ Server error. Please try again.', 'error-message');
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Sign Up";
+      }
+    }
+
+    // Signup form submission
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      handleRegistration();
+    });
+  </script>
+</body>
+
+</html>
