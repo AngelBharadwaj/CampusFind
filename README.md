@@ -1,23 +1,25 @@
-CampusFind
+# CampusFind
 
 A full-stack Lost & Found Management System built for college campuses. CampusFind enables students and faculty to report lost or found items, submit claims, and manage item recovery through a centralized platform.
 
-Features
-Student and faculty authentication
-OTP-based student verification
-Lost and found item reporting
-Item browsing and claim submission
-Claim management
-Automated email notifications
+## Features
 
-Tech Stack
-Frontend: HTML, CSS, JavaScript
-Backend: Node.js, Express.js
-Database: MongoDB
-Email: Nodemailer
-Configuration: dotenv
+- Student and faculty authentication
+- OTP-based student verification
+- Lost and found item reporting
+- Item browsing and claim submission
+- Claim management
+- Automated email notifications
 
-Project Structure
+## Tech Stack
+
+- **Frontend:** HTML, CSS, JavaScript
+- **Backend:** Node.js, Express.js
+- **Database:** MongoDB
+- **Email:** Nodemailer
+- **Configuration:** dotenv
+
+## Project Structure
 CampusFind/
 ├── Backend/
 ├── claim.html
@@ -27,5 +29,6 @@ CampusFind/
 ├── signup.html
 └── student.html
 
-Team
+
+## Team
 CampusFind was developed collaboratively as an academic project.
