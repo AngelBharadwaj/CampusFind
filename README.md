@@ -29,6 +29,5 @@ CampusFind/
 ├── signup.html
 └── student.html
 
-
 ## Team
 CampusFind was developed collaboratively as an academic project.
